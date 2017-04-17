@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>贪吃蛇</title>
+    <script>
+//        1、绘制操作界面
+        function Map() {
+//            不变的学习通过“私有成员”定义
+//            变的信息通过“公开的成员”定义
+            var w = 800;
+            var h = 400;
+
+//            绘制地图
+            this.showmap = function () {
+//                创建div、设置样式、追加给body
+                var ditu = document.createElement('div');
+
+                ditu.style.width = w+"px";
+                ditu.style.height = h+"px";
+                ditu.style.backgroundColor = "pink";
+                ditu.style.backgroundImage = "url(./bg.jpg)";
+
+                document.body.appendChild(ditu);
+
+            }
+        }
+//        2、食物
+        function Food() {
+            var len = 20;
+//            声明食物坐标
+            this.foodX = 0;
+            this.foodY = 0;
+            this.piece = null; // 保存食物div节点对象
+//            绘制食物
+            this.showfood = function () {
+                if(this.piece===null) {
+                    this.piece = document.createElement('div');
+                    this.piece.style.width = this.piece.style.height = len+"px";
+                    this.piece.style.backgroundColor = "green";
+//                给食物设置“绝对定位 position/left/top三个一起使用”
+                    this.piece.style.position = "absolute";
+                    document.body.appendChild(this.piece);
+                }
+//                食物需要放在小格子里边，不能压线
+//                食物移动的最小距离是“步近值”，值为20
+//                食物移动的距离称为“权”，X轴有权坐标（0-39），y轴也有权坐标（0-19）
+//                食物移动的真实距离：步进值*权
+//                食物的“随机”权坐标设置
+//                创建div、设置样式、追加给body
+//                保证页面只有一个食物的div存在
+
+                this.foodX = Math.floor(Math.random()*40);//向下取整
+                this.foodY = Math.floor(Math.random()*20);
+                this.piece.style.left = this.foodX * len + "px";
+                this.piece.style.top = this.foodY * len + "px";
+
+//                此处如果不加this只用用foodY来访问，那么就是访问Food类的私有成员。
+//                公有成员必须通过this关键字来访问
+//                piece.style.top = foodY * len + "px";
+            }
+        }
+    
+//        3、小蛇
+        function Snake() {
+            var len = 20; //蛇节的边长
+
+//            定义小蛇（二维数组）
+//            每个蛇节：[x轴， y轴， 颜色， 蛇节div节点对象]
+            this.snakebody = [[0,1,"green",null],[1,1,"green",null],[2,1,"green",null],[3,1,"red",null]];
+
+            this.redirect = "right"; //默认移动方向
+//            绘制小蛇
+            this.showsnake = function () {
+//                遍历snakebody创建4个div蛇节、设置样式、追加给body
+                for(var i=0; i<this.snakebody.length; i++) {
+//                    以下创建的蛇节数量有限制，不能无限创建
+//                    把创建好的蛇节给保存起来，以便后期进行对比
+                    if(this.snakebody[i][3]===null){
+                        this.snakebody[i][3] = document.createElement('div');
+                        this.snakebody[i][3].style.width = this.snakebody[i][3].style.height = len + "px";
+                        this.snakebody[i][3].style.backgroundColor = this.snakebody[i][2];//颜色
+//                    给蛇节设置“绝对定位”
+                        this.snakebody[i][3].style.position = "absolute";
+                        document.body.appendChild(this.snakebody[i][3]);
+                    }
+//                    后面如果有div则根据新的坐标重新定位
+                    this.snakebody[i][3].style.left = this.snakebody[i][0] * len + "px";
+                    this.snakebody[i][3].style.top = this.snakebody[i][1] * len + "px";
+                }
+
+            }
+//            移动小蛇
+            this.movesnake = function () {
+//                当前蛇节的”新坐标“等于下个蛇节的”旧坐标“
+//                非头部蛇节
+                for(var n=0; n<this.snakebody.length-1; n++) {
+                    this.snakebody[n][0] = this.snakebody[n+1][0];
+                    this.snakebody[n][1] = this.snakebody[n+1][1];
+                }
+//                头部蛇节
+                if(this.redirect == "right") {
+                    this.snakebody[this.snakebody.length-1][0] += 1;
+                }
+                if(this.redirect == "left") {
+                    this.snakebody[this.snakebody.length-1][0] -= 1;
+                }
+                if(this.redirect == "down") {
+                    this.snakebody[this.snakebody.length-1][1] += 1;
+                }
+                if(this.redirect == "up") {
+                    this.snakebody[this.snakebody.length-1][1] -= 1;
+                }
+//                触碰食物
+//                蛇头坐标
+                var snakeX = this.snakebody[this.snakebody.length-1][0];
+                var snakeY = this.snakebody[this.snakebody.length-1][1];
+//                食物坐标 food.foodX/food.foodY
+                if(snakeX==food.foodX && snakeY==food.foodY){
+//                    增加蛇节：增加蛇节的坐标等于小蛇“尾部蛇节的旧坐标”
+                    var newjie = [this.snakebody[0][0],this.snakebody[0][1],"green",null];
+//                    unshift()给数组头部追加元素
+                    this.snakebody.unshift(newjie);
+
+//                生成新食物
+                    food.showfood();
+                }
+
+//                控制小蛇在指定范围内移动
+                if(snakeX<0 || snakeX>39 || snakeY<0 || snakeY>19){
+                    alert('game over');
+                    clearInterval(mytime);// 清除间隔函数
+                    return false;
+                }
+//                不能吃到自己（蛇头坐标与非蛇头蛇节坐标一致就是吃到自己）
+                    for(var k=0; k<this.snakebody.length-1; k++){// 遍历非蛇头蛇节坐标
+                        if(snakeX==this.snakebody[k][0] && snakeY==this.snakebody[k][1]){
+                            alert('game over kill you by yourself');
+                            clearInterval(mytime);
+                            return false;
+                        }
+                    }
+
+//                根据新坐标重新绘制小蛇
+                this.showsnake();
+            }
+        }
+        window.onload = function () {
+            var map = new Map();
+            map.showmap();
+//            局部变量food在下面的snake中访问不到,必须变成全局的,即去掉var
+            food = new Food();
+            food.showfood();
+
+            snake = new Snake(); // 去掉var，snake对象是全局的
+            snake.showsnake(); // 绘制小蛇
+//            setInterval(全局变量信息，时间)
+            mytime = setInterval("snake.movesnake()",200); //移动小蛇
+
+//            给document设置键盘事件，控制小蛇移动方向
+            document.onkeydown = function (evt) {
+                var num = evt.keyCode;
+                if(num==40) {
+                    snake.redirect = "down";
+                }
+                if(num==38) {
+                    snake.redirect = "up";
+                }
+                if(num==37) {
+                    snake.redirect = "left";
+                }
+                if(num==39) {
+                    snake.redirect = "right";
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+</body>
+</html>
